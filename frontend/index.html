@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="rw">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123c35">
+  <meta name="description" content="E-Gisubizo helps households troubleshoot biogas and solar systems, even offline.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>E-Gisubizo · Ingufu zizewe</title>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="E-Gisubizo home"><span class="brand-mark">⚡</span><span>E-Gisubizo<small>Ingufu zizewe, buri munsi</small></span></a>
+    <div class="top-actions">
+      <span id="connection-status" class="connection"><span class="status-dot"></span><span>Turiteguye</span></span>
+      <a class="quiet-link" href="/technician.html">Abatekinisiye</a>
+    </div>
+  </header>
+
+  <main class="citizen-shell">
+    <!-- A single hardware gate keeps all diagnosis paths tied to a registered unit. -->
+    <section class="welcome-card" aria-labelledby="welcome-title">
+      <p class="eyebrow">UBUFASHA BW’INGUFU · RWANDA</p>
+      <h1 id="welcome-title">Reka dukemure ikibazo cy’ingufu.</h1>
+      <p>Hitamo igikoresho cyawe. Ushobora gukomeza no mu gihe internet itariho.</p>
+    </section>
+
+    <div id="app-message" class="notice" role="status" aria-live="polite" hidden></div>
+
+    <section id="hardware-panel" class="panel" aria-labelledby="hardware-title">
+      <div class="section-heading">
+        <div class="step-badge">01</div>
+        <div><p class="eyebrow">IGIKORESHO CYAWE</p><h2 id="hardware-title">Tumenye igikoresho</h2></div>
+      </div>
+      <form id="hardware-form" class="stack">
+        <label for="hardware-id">Nomero iri ku gikoresho <span class="label-en">Hardware ID</span></label>
+        <input id="hardware-id" name="hardware_id" autocomplete="off" autocapitalize="characters" maxlength="80" placeholder="Urugero: BIO-RW-0001" required>
+        <fieldset class="model-picker">
+          <legend>Hitamo ubwoko bw’ingufu <span class="label-en">Choose system type</span></legend>
+          <div class="model-options">
+            <label class="model-option"><input type="radio" name="model_type" value="biogas" required><span class="model-icon">♨️</span><span>Biogaz<small>Biogas digester</small></span></label>
+            <label class="model-option"><input type="radio" name="model_type" value="solar" required><span class="model-icon">☀️</span><span>Imirasire<small>PAYGo solar</small></span></label>
+          </div>
+        </fieldset>
+        <button id="start-button" class="button button-primary button-large" type="submit"><span>🔍</span> Tangira igenzura <small>Start diagnosis</small></button>
+        <p class="microcopy">ID igenzurwa mbere yo gutangira. Umaze kuyigenzura kuri internet, ushobora kuyikoresha utari online.</p>
+      </form>
+    </section>
+
+    <!-- JavaScript renders one database-backed decision node at a time in this panel. -->
+    <section id="diagnostic-panel" class="panel diagnostic-panel" aria-live="polite" hidden>
+      <div class="diagnostic-topline"><span id="model-label" class="tag"></span><button id="restart-button" class="text-button" type="button">Hindura igikoresho</button></div>
+      <div id="diagnostic-content"></div>
+    </section>
+
+    <section class="help-strip">
+      <span class="help-icon">🛟</span>
+      <p><strong>Umutekano ubanze.</strong> Ntukore ku nsinga, kuri batiri cyangwa ku muyoboro wa gaz niba utizeye. Saba umutekinisiye igihe cyose bikenewe.</p>
+    </section>
+  </main>
+  <footer class="footer"><span>E-Gisubizo · Ifasha ingufu z’isuku kugera kure.</span><span id="queue-status">Tike zabitswe kuri telefoni: 0</span></footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>
