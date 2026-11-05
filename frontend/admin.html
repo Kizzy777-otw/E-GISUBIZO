@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123c35">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Administration · E-Gisubizo</title>
+</head>
+<body class="dispatch-page">
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">⚡</span><span>E-Gisubizo<small>System administration</small></span></a>
+    <div class="top-actions"><a class="quiet-link" href="/technician.html">Dispatch queue</a><a class="quiet-link" href="/">Citizen portal</a></div>
+  </header>
+  <main class="dispatch-shell">
+    <section class="dispatch-heading">
+      <div><p class="eyebrow">SYSTEM SETTINGS</p><h1>Administration</h1><p>Manage registered equipment and update the database-driven diagnostic paths.</p></div>
+    </section>
+    <!-- Administrative tools are revealed only after checking the account's role. -->
+    <section id="login-panel" class="panel auth-panel">
+      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Administrator sign-in</h2><p>Use your administrator-issued access token.</p></div></div>
+      <form id="login-form" class="auth-form">
+        <label for="access-token">Access token</label>
+        <input id="access-token" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" type="submit">Sign in</button>
+      </form>
+      <div id="login-error" class="form-error" role="alert" hidden></div>
+    </section>
+    <section id="admin-panel" hidden>
+      <div class="admin-toolbar"><p id="admin-identity" class="tag"></p><button id="signout-button" class="button button-outline" type="button">Sign out</button></div>
+      <div class="admin-grid">
+        <section class="panel">
+          <div class="section-heading"><span class="section-icon">🧰</span><div><h2>Register hardware</h2><p>Add a uniquely identified biogas or solar unit to the registry.</p></div></div>
+          <form id="hardware-form" class="auth-form">
+            <label for="hardware-id">Hardware ID</label>
+            <input id="hardware-id" maxlength="80" autocomplete="off" placeholder="BIO-RW-0002" required>
+            <label for="model-type">System type</label>
+            <select id="model-type" required><option value="biogas">Biogas digester</option><option value="solar">PAYGo solar</option></select>
+            <label for="district">District</label>
+            <input id="district" maxlength="100" required>
+            <label for="sector">Sector</label>
+            <input id="sector" maxlength="100" required>
+            <button class="button button-primary" type="submit">Register unit</button>
+          </form>
+          <div id="hardware-message" class="notice" role="status" aria-live="polite" hidden></div>
+        </section>
+        <section class="panel">
+          <div class="section-heading"><span class="section-icon">🌳</span><div><h2>Edit diagnostic tree</h2><p>Update JSON content without redeploying the citizen portal.</p></div></div>
+          <form id="tree-form" class="auth-form">
+            <label for="tree-select">Decision tree</label>
+            <select id="tree-select" required></select>
+            <label for="tree-version">Version <span class="label-en">Incremented when saved</span></label>
+            <input id="tree-version" type="number" min="1" readonly>
+            <label for="tree-json">JSON tree content</label>
+            <textarea id="tree-json" class="json-editor" spellcheck="false" autocapitalize="off" required></textarea>
+            <button class="button button-primary" type="submit">Save new version</button>
+          </form>
+          <div id="tree-message" class="notice" role="status" aria-live="polite" hidden></div>
+        </section>
+      </div>
+      <section class="panel users-panel">
+        <div class="section-heading"><span class="section-icon">👥</span><div><h2>User access</h2><p>Create a technician/admin account and revoke access when required. New tokens are shown only once.</p></div></div>
+        <form id="user-form" class="user-form">
+          <label for="username">Username<input id="username" minlength="3" maxlength="80" pattern="[A-Za-z0-9_-]{3,80}" autocomplete="off" required></label>
+          <label for="user-role">Role<select id="user-role"><option value="technician">Technician</option><option value="admin">Administrator</option></select></label>
+          <label for="user-district">District<input id="user-district" maxlength="100"></label>
+          <label for="user-sector">Sector<input id="user-sector" maxlength="100"></label>
+          <button class="button button-primary" type="submit">Create account</button>
+        </form>
+        <div id="user-token" class="one-time-token" role="status" hidden></div>
+        <div id="users-message" class="notice" role="status" aria-live="polite" hidden></div>
+        <div class="table-wrap">
+          <table class="users-table">
+            <thead><tr><th>Username</th><th>Role</th><th>District</th><th>Sector</th><th>Access</th><th>Action</th></tr></thead>
+            <tbody id="user-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="/admin.js" defer></script>
+</body>
+</html>
