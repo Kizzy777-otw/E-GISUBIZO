@@ -1,0 +1,19 @@
+{
+  "name": "E-Gisubizo - Ingufu zizewe",
+  "short_name": "E-Gisubizo",
+  "description": "Offline help for biogas and solar energy systems.",
+  "lang": "rw",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f3",
+  "theme_color": "#123c35",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
