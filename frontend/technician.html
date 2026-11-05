@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123c35">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Dispatch queue · E-Gisubizo</title>
+</head>
+<body class="dispatch-page">
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">⚡</span><span>E-Gisubizo<small>Technician dispatch</small></span></a>
+    <div class="top-actions"><a class="quiet-link" href="/admin.html">Admin tools</a><a class="quiet-link" href="/">Citizen portal</a></div>
+  </header>
+  <main class="dispatch-shell">
+    <section class="dispatch-heading">
+      <div><p class="eyebrow">FIELD OPERATIONS</p><h1>Service dispatch</h1><p>Tickets requiring an on-site technician, scoped to your assigned district.</p></div>
+      <span id="dispatch-count" class="count-pill">— tickets</span>
+    </section>
+    <!-- Ticket data stays hidden until the API verifies the technician's bearer token. -->
+    <section id="login-panel" class="panel auth-panel">
+      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Technician sign-in</h2><p>Use your administrator-issued access token.</p></div></div>
+      <form id="login-form" class="auth-form">
+        <label for="access-token">Access token</label>
+        <input id="access-token" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" type="submit">Sign in</button>
+      </form>
+      <div id="login-error" class="form-error" role="alert" hidden></div>
+    </section>
+    <section id="dispatch-panel" class="panel" hidden>
+      <div class="dispatch-toolbar">
+        <div><h2>Active service tickets</h2><p>Filter and update the status as work progresses.</p></div>
+        <button id="signout-button" class="button button-outline" type="button">Sign out</button>
+      </div>
+      <div class="filters">
+        <label>Status<select id="status-filter"><option value="">All statuses</option><option>Open</option><option>InProgress</option><option>Resolved</option><option>Closed</option></select></label>
+        <label>Priority<select id="priority-filter"><option value="">All priorities</option><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option></select></label>
+        <button id="refresh-button" class="button button-outline" type="button">↻ Refresh</button>
+      </div>
+      <div id="dispatch-message" class="notice" role="status" aria-live="polite" hidden></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Status</th><th>Priority</th><th>Hardware ID</th><th>Fault category</th><th>Sector / District</th><th>Created</th><th>Update</th></tr></thead>
+          <tbody id="ticket-rows"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state" hidden><span>✅</span><strong>No tickets match these filters.</strong><small>New synced tickets will appear here automatically.</small></div>
+      </div>
+    </section>
+  </main>
+  <script src="/technician.js" defer></script>
+</body>
+</html>
