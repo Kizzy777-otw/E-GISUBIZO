@@ -17,6 +17,16 @@ engine = create_engine(DATABASE_URL, **_engine_options)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
+def validate_database_configuration() -> None:
+    """Prevent production/serverless instances from silently using ephemeral SQLite."""
+    is_deployed = os.getenv("APP_ENV", "").lower() == "production" or os.getenv("VERCEL") == "1"
+    if is_deployed and engine.dialect.name == "sqlite":
+        raise RuntimeError(
+            "Production and Vercel deployments require a persistent PostgreSQL DATABASE_URL; "
+            "SQLite storage on a function filesystem is ephemeral."
+        )
+
+
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models."""
 

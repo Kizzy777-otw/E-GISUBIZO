@@ -27,9 +27,28 @@ Open `http://127.0.0.1:8000/`. The service initializes a local SQLite database a
 
 `DATABASE_URL` can be set to a SQLAlchemy SQLite or PostgreSQL URL. For PostgreSQL, install the declared `psycopg[binary]` dependency. `ALLOWED_ORIGINS` is a comma-separated list and should only be set to trusted origins when hosting the frontend separately.
 
+## Free pilot deployment (Vercel Hobby + Neon Free)
+
+This deployment targets **pilot/testing use**, not production-critical data. Vercel Hobby includes hosted HTTPS and Python FastAPI functions; Neon Free supplies PostgreSQL. Both plans have usage and recovery limitations, and the database can scale to zero after inactivity, adding a cold start. A free-tier deployment does not provide production-grade availability or recovery guarantees. Check Vercel's current Hobby terms and limits before inviting a wider audience.
+
+1. Create a **Neon Free** PostgreSQL project. Choose a region near the users and copy its pooled connection string. In Vercel, the Python runtime and dependencies are configured through `pyproject.toml` and `.python-version`; the FastAPI `StaticFiles` mount publishes the PWA shell through Vercel's CDN.
+2. Import this GitHub repository into a Vercel Hobby project with the repository root as the project root. Vercel should detect the FastAPI entrypoint. The app deployment configuration is in `pyproject.toml` and `vercel.json`. Add the environment variables in the next step before the first production deployment.
+3. In **Project → Settings → Environment Variables**, set the Production variables:
+   - `APP_ENV` = `production`
+   - `DATABASE_URL` = Neon connection string, with the scheme changed from `postgresql://` to `postgresql+psycopg://` and `sslmode=require` enabled.
+   - `ADMIN_API_TOKEN` = a unique, long random administrator token.
+   - `TECHNICIAN_API_TOKEN` = a different, unique technician token.
+   - `TECHNICIAN_DISTRICT` = the initial technician district, for example `Rulindo`.
+   - `TECHNICIAN_SECTOR` = optional technician sector, for example `Base`.
+   Keep credentials in Vercel's environment-variable settings; never put them in Git or chat.
+4. Redeploy after setting the variables. Open the Vercel HTTPS domain and verify `/`, `/technician.html`, and `/admin.html`. Sign in to the admin page to register the pilot hardware and create individual technician accounts.
+5. Monitor Vercel and Neon usage, export the Neon database regularly, and test a database restore before storing real household records. Free-tier usage can be capped or changed by the providers. Upgrade to paid compute and a database plan with managed backups before relying on the service for production maintenance.
+
+Production mode refuses to start with SQLite because function filesystems are not persistent. Do not send access tokens or database connection strings in chat.
+
 ## Production and administration
 
-- Terminate TLS 1.3 at a trusted reverse proxy and forward only HTTPS traffic in production. The development Uvicorn command above is intentionally local HTTP.
+- Use the hosting platform's HTTPS/TLS endpoint in production; the development Uvicorn command above is intentionally local HTTP. For a self-hosted deployment, terminate TLS at a trusted reverse proxy.
 - Set long, unique `TECHNICIAN_API_TOKEN` and `ADMIN_API_TOKEN` secrets. Only SHA-256 token hashes are persisted. Do not expose tokens in URLs or store technician tokens beyond the current browser session.
 - Configure a durable database, backups, monitoring, and restricted CORS origins before deployment. Live SMS, USSD, and telemetry integrations are out of scope.
 - An administrator can register a unit with `POST /api/v1/hardware` and update an existing tree with `PUT /api/v1/diagnostic-trees/{slug}` using `Authorization: Bearer <ADMIN_API_TOKEN>`. API docs are available at `/docs`.

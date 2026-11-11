@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, validate_database_configuration
 from .routers import auth, hardware, notifications, tickets, trees, users
 from .seed import seed_initial_data
 
@@ -20,6 +20,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    validate_database_configuration()
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
         seed_initial_data(db)
