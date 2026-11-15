@@ -10,29 +10,81 @@ An offline-first maintenance platform for rural biogas digesters and PAYGo solar
 - Mock SMS dispatch logging when a new ticket syncs; no live SMS gateway is contacted.
 - Local PWA app-shell files and decision trees are small and have no third-party runtime assets. Measure the uncompressed cached shell with `Get-ChildItem frontend | Measure-Object -Property Length -Sum`; keep it below 1 MB when adding assets.
 
-## Run locally
+## Set up and run locally
 
-Use Python 3.10 or later. From the repository root:
+### Requirements
+
+- Git
+- Python 3.12 (the required version is recorded in `.python-version`)
+
+Clone the repository and change into its root directory:
+
+```shell
+git clone https://github.com/Kizzy777-otw/E-GISUBIZO.git
+cd E-GISUBIZO
+```
+
+Create and activate a virtual environment, then install the project and its dependencies.
+
+Windows PowerShell:
 
 ```powershell
-py -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r backend\requirements.txt
-$env:TECHNICIAN_API_TOKEN = "replace-with-a-long-random-technician-token"
-$env:ADMIN_API_TOKEN = "replace-with-a-long-random-admin-token"
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+macOS / Linux:
+
+```shell
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+The app defaults to a local SQLite database (`egisubizo.db` in the current directory), so no database service is needed for a first run. Configure separate local admin and technician tokens before starting the server.
+
+Windows PowerShell:
+
+```powershell
+$env:ADMIN_API_TOKEN = (python -c "import secrets; print(secrets.token_urlsafe(32))")
+$env:TECHNICIAN_API_TOKEN = (python -c "import secrets; print(secrets.token_urlsafe(32))")
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`. The service initializes a local SQLite database and two pilot hardware IDs: `BIO-RW-0001` and `SOL-RW-0001`. The technician table is at `/technician.html`; sign in with the configured technician token. Set `TECHNICIAN_DISTRICT` and optionally `TECHNICIAN_SECTOR` to limit the technician's queue. The seeded pilot units are in Rulindo / Base.
+macOS / Linux:
 
-`DATABASE_URL` can be set to a SQLAlchemy SQLite or PostgreSQL URL. For PostgreSQL, install the declared `psycopg[binary]` dependency. `ALLOWED_ORIGINS` is a comma-separated list and should only be set to trusted origins when hosting the frontend separately.
+```shell
+export ADMIN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export TECHNICIAN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000/`. On startup, the app creates the database tables, seeds the diagnostic trees and pilot hardware IDs `BIO-RW-0001` (biogas) and `SOL-RW-0001` (solar), and creates admin/technician accounts for any tokens supplied in the environment. The citizen PWA is at `/`, technician dispatch is at `/technician.html`, and administration is at `/admin.html`. Sign in with the corresponding token generated above. API documentation is available at `/docs`.
+
+Optional configuration:
+
+- `DATABASE_URL`: SQLAlchemy database URL. For local SQLite, leave it unset. To use PostgreSQL, install the declared `psycopg[binary]` dependency (included by `pip install -e .`) and use a `postgresql+psycopg://` URL.
+- `TECHNICIAN_DISTRICT`: district assigned to the seeded technician account; defaults to `Rulindo`.
+- `TECHNICIAN_SECTOR`: optional sector assigned to the seeded technician account; unset means no sector filter.
+- `ALLOWED_ORIGINS`: comma-separated trusted origins, only needed when hosting the frontend separately. Same-origin deployments should leave it unset.
+
+For a quick smoke check while the server is running:
+
+```shell
+curl http://127.0.0.1:8000/api/v1/diagnostic-trees
+```
+
+Stop the local server with `Ctrl+C`. The generated SQLite database contains local development data and should not be used as a production database.
 
 ## Free pilot deployment (Vercel Hobby + Neon Free)
 
 This deployment targets **pilot/testing use**, not production-critical data. Vercel Hobby includes hosted HTTPS and Python FastAPI functions; Neon Free supplies PostgreSQL. Both plans have usage and recovery limitations, and the database can scale to zero after inactivity, adding a cold start. A free-tier deployment does not provide production-grade availability or recovery guarantees. Check Vercel's current Hobby terms and limits before inviting a wider audience.
 
-1. Create a **Neon Free** PostgreSQL project. Choose a region near the users and copy its pooled connection string. In Vercel, the Python runtime and dependencies are configured through `pyproject.toml` and `.python-version`; the FastAPI `StaticFiles` mount publishes the PWA shell through Vercel's CDN.
-2. Import this GitHub repository into a Vercel Hobby project with the repository root as the project root. Vercel should detect the FastAPI entrypoint. The app deployment configuration is in `pyproject.toml` and `vercel.json`. Add the environment variables in the next step before the first production deployment.
+1. Create a **Neon Free** PostgreSQL project. Choose a region near the users and copy its pooled connection string. The Vercel `app` service publishes the files in `frontend/`; the `backend` service runs FastAPI from the repository root using the dependencies in `pyproject.toml` and Python version in `.python-version`.
+2. Import this GitHub repository into a Vercel Hobby project with the repository root as the project root. `vercel.json` configures the `app` and `backend` services and routes `/api/*` to FastAPI while serving other paths from the frontend. The browser uses same-origin `/api/v1` requests, so no service binding is needed. Add the environment variables in the next step before the first production deployment.
 3. In **Project → Settings → Environment Variables**, set the Production variables:
    - `APP_ENV` = `production`
    - `DATABASE_URL` = Neon connection string, with the scheme changed from `postgresql://` to `postgresql+psycopg://` and `sslmode=require` enabled.
@@ -43,6 +95,15 @@ This deployment targets **pilot/testing use**, not production-critical data. Ver
    Keep credentials in Vercel's environment-variable settings; never put them in Git or chat.
 4. Redeploy after setting the variables. Open the Vercel HTTPS domain and verify `/`, `/technician.html`, and `/admin.html`. Sign in to the admin page to register the pilot hardware and create individual technician accounts.
 5. Monitor Vercel and Neon usage, export the Neon database regularly, and test a database restore before storing real household records. Free-tier usage can be capped or changed by the providers. Upgrade to paid compute and a database plan with managed backups before relying on the service for production maintenance.
+
+### Staging and pilot readiness
+
+- Staging is deployed at [the Vercel Preview URL](https://e-gisubizo-fiokbp13l-kizzy777-otw.vercel.app/). Preview uses a separate Neon `staging` schema-only branch; it does not copy production records. Its `DATABASE_URL`, `APP_ENV`, `ADMIN_API_TOKEN`, and `TECHNICIAN_API_TOKEN` are configured as Vercel Preview variables, separate from Production.
+- Vercel Deployment Protection currently requires Vercel authentication to open the Preview URL. Keep it protected unless access is deliberately arranged for pilot participants.
+- The ignored local file `.env.staging.local` contains the staging credentials for local reference. Never commit or share it. The production credentials remain in `.env.production.local`.
+- The staging API has been checked with both pilot units: `BIO-RW-0001` / `biogas` and `SOL-RW-0001` / `solar`.
+- **Field pilot validation is still outstanding.** Test with consenting rural households and technicians, including low-bandwidth and offline diagnosis, hardware registration, ticket queuing and sync, and dispatch updates. Record comprehension, diagnostic accuracy, and safety feedback before revising Kinyarwanda wording or decision trees.
+- **Production-grade operations are still outstanding.** The current free-tier deployment is for pilot/testing, not production-critical use. Before a wider rollout, select plans that meet availability and backup requirements, configure and test database backups/restores, and confirm the registered hardware inventory and operational monitoring.
 
 Production mode refuses to start with SQLite because function filesystems are not persistent. Do not send access tokens or database connection strings in chat.
 
