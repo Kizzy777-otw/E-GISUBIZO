@@ -27,6 +27,17 @@ Open `http://127.0.0.1:8000/`. The service initializes a local SQLite database a
 
 `DATABASE_URL` can be set to a SQLAlchemy SQLite or PostgreSQL URL. For PostgreSQL, install the declared `psycopg[binary]` dependency. `ALLOWED_ORIGINS` is a comma-separated list and should only be set to trusted origins when hosting the frontend separately.
 
+## Run backend tests
+
+Install the optional test dependencies into the active virtual environment, then run the test suite from the repository root:
+
+```shell
+python -m pip install -e ".[test]"
+python -m pytest
+```
+
+The API tests use an isolated temporary SQLite database and seeded test-only credentials; they do not connect to Neon or a deployed environment.
+
 ## Free pilot deployment (Vercel Hobby + Neon Free)
 
 This deployment targets **pilot/testing use**, not production-critical data. Vercel Hobby includes hosted HTTPS and Python FastAPI functions; Neon Free supplies PostgreSQL. Both plans have usage and recovery limitations, and the database can scale to zero after inactivity, adding a cold start. A free-tier deployment does not provide production-grade availability or recovery guarantees. Check Vercel's current Hobby terms and limits before inviting a wider audience.
