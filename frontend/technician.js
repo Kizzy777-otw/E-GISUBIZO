@@ -126,28 +126,42 @@
 
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    token = document.getElementById("access-token").value.trim();
     loginError.hidden = true;
+    const username = document.getElementById("username-login").value.trim();
+    const password = document.getElementById("password-login").value;
     try {
-      const response = await fetch(`${API}/tickets`, {
-        headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      const loginResponse = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ username, password }),
       });
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        throw new Error(result.detail || "Sign-in failed.");
-      }
+      const login = await loginResponse.json().catch(() => ({}));
+      if (!loginResponse.ok) throw new Error(login.detail || "Sign-in failed.");
+      if (!["technician", "admin"].includes(login.user.role)) throw new Error("This account does not have dispatch access.");
+      token = login.access_token;
+      const tickets = await api(`/tickets`);
       sessionStorage.setItem(tokenKey, token);
       setSignedIn(true);
-      renderRows(await response.json());
+      renderRows(tickets);
     } catch (error) {
       token = null;
-      document.getElementById("access-token").value = "";
-      loginError.textContent = error.message || "Could not sign in. Check your connection and token.";
+      document.getElementById("password-login").value = "";
+      loginError.textContent = error.message || "Could not sign in. Check your username and password.";
       loginError.hidden = false;
     }
   });
 
-  document.getElementById("signout-button").addEventListener("click", () => {
+  document.getElementById("signout-button").addEventListener("click", async () => {
+    if (token) {
+      try {
+        await fetch(`${API}/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (error) {
+        console.warn("Could not revoke the password-login session.", error);
+      }
+    }
     token = null;
     sessionStorage.removeItem(tokenKey);
     setSignedIn(false);

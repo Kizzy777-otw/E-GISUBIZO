@@ -6,7 +6,10 @@ import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import DiagnosticTree, HardwareUnit, User, utc_now
+from .database import SessionLocal, validate_database_configuration
+from argon2 import PasswordHasher
+
+from .models import DiagnosticTree, HardwareUnit, User
 
 
 DIAGNOSTIC_TREES: tuple[dict, ...] = (
@@ -183,6 +186,9 @@ DIAGNOSTIC_TREES: tuple[dict, ...] = (
 )
 
 
+password_hasher = PasswordHasher()
+
+
 def seed_initial_data(db: Session) -> None:
     """Insert initial trees, pilot hardware, and only explicitly configured users."""
     # Seed by stable slug/ID so application restarts do not duplicate pilot records.
@@ -191,7 +197,7 @@ def seed_initial_data(db: Session) -> None:
             db.add(DiagnosticTree(**tree_data))
 
     demo_units = (
-        ("BIO-RW-0001", "biogas"),
+        ("HBGC-00001", "biogas"),
         ("SOL-RW-0001", "solar"),
     )
     for hardware_id, model_type in demo_units:
@@ -206,10 +212,10 @@ def seed_initial_data(db: Session) -> None:
             )
 
     configured_users = (
-        ("technician", "technician", os.getenv("TECHNICIAN_API_TOKEN")),
-        ("administrator", "admin", os.getenv("ADMIN_API_TOKEN")),
+        ("technician", "technician", os.getenv("TECHNICIAN_API_TOKEN"), os.getenv("TECHNICIAN_PASSWORD")),
+        ("administrator", "admin", os.getenv("ADMIN_API_TOKEN"), os.getenv("ADMIN_PASSWORD")),
     )
-    for username, role, token in configured_users:
+    for username, role, token, password in configured_users:
         if not token:
             continue
         token_hash = sha256(token.encode("utf-8")).hexdigest()
@@ -219,8 +225,18 @@ def seed_initial_data(db: Session) -> None:
             db.add(user)
         else:
             user.token_hash = token_hash
+        if password:
+            if len(password) < 12:
+                raise RuntimeError(f"{username.upper()} password must be at least 12 characters.")
+            user.password_hash = password_hasher.hash(password)
         if role == "technician":
             user.district = os.getenv("TECHNICIAN_DISTRICT", "Rulindo")
             user.sector = os.getenv("TECHNICIAN_SECTOR") or None
 
     db.commit()
+
+
+if __name__ == "__main__":
+    validate_database_configuration()
+    with SessionLocal() as session:
+        seed_initial_data(session)

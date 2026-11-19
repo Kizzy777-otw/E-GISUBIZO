@@ -340,33 +340,42 @@
     const tickets = (await getAll(TICKET_STORE)).filter((ticket) => ticket.state === "queued");
     if (!tickets.length) return;
     try {
-      const response = await fetch(`${API}/tickets/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ tickets: tickets.map(({ state, created_at, ...ticket }) => ticket) }),
-      });
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        throw new Error(result.detail || `Ticket sync failed (${response.status}).`);
-      }
-      const result = await response.json();
-      // Remove only acknowledged tickets; rejected ones stay visible with their server reason.
-      for (const outcome of result.results || []) {
-        const ticket = await transact(TICKET_STORE, "readonly", (store) => store.get(outcome.client_ticket_id));
-        if (!ticket) continue;
-        if (outcome.result === "synced" || outcome.result === "already_synced") {
-          await transact(TICKET_STORE, "readwrite", (store) => store.delete(outcome.client_ticket_id));
-        } else {
-          ticket.state = "rejected";
-          ticket.sync_error = outcome.message || "Ticket was rejected by the server.";
-          await transact(TICKET_STORE, "readwrite", (store) => store.put(ticket));
+      let totalSynced = 0;
+      let totalRejected = 0;
+      for (let offset = 0; offset < tickets.length; offset += 100) {
+        const batch = tickets.slice(offset, offset + 100);
+        const response = await fetch(`${API}/tickets/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            tickets: batch.map(({ state, created_at, ...ticket }) => ticket),
+          }),
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.detail || `Ticket sync failed (${response.status}).`);
         }
+        const result = await response.json();
+        totalSynced += result.synced || 0;
+        totalRejected += result.rejected || 0;
+        // Remove only acknowledgements; rejected tickets stay visible with the server reason.
+        for (const outcome of result.results || []) {
+          const ticket = await transact(TICKET_STORE, "readonly", (store) => store.get(outcome.client_ticket_id));
+          if (!ticket) continue;
+          if (outcome.result === "synced" || outcome.result === "already_synced") {
+            await transact(TICKET_STORE, "readwrite", (store) => store.delete(outcome.client_ticket_id));
+          } else {
+            ticket.state = "rejected";
+            ticket.sync_error = outcome.message || "Ticket was rejected by the server.";
+            await transact(TICKET_STORE, "readwrite", (store) => store.put(ticket));
+          }
+        }
+        await updateQueueCount();
       }
-      await updateQueueCount();
-      if (result.rejected) {
-        showMessage(`${result.rejected} tike ntiyoherejwe. Reba nomero ya hardware cyangwa uvugane n’umutekinisiye.`, "error");
+      if (totalRejected) {
+        showMessage(`${totalRejected} tike ntiyoherejwe. Reba nomero ya hardware cyangwa uvugane n’umutekinisiye.`, "error");
       } else {
-        showMessage(`${result.synced} tike zoherejwe neza.`, "success");
+        showMessage(`${totalSynced} tike zoherejwe neza.`, "success");
       }
     } catch (error) {
       showMessage(`Tike iracyabitswe kuri telefoni. Izongera koherezwa internet imaze kugaruka. ${error.message}`, "warning");

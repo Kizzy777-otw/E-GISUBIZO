@@ -17,6 +17,7 @@ from ..schemas import (
     TicketSyncRequest,
     TicketSyncResponse,
     TicketSyncResult,
+    hardware_id_matches_model,
 )
 from ..services import log_mock_sms_notification
 from .auth import get_current_user, require_role
@@ -45,6 +46,17 @@ def sync_tickets(payload: TicketSyncRequest, db: DatabaseSession) -> TicketSyncR
 
     # Report results per ticket so one invalid offline record does not block its batch.
     for item in payload.tickets:
+        if not hardware_id_matches_model(item.hardware_id, item.model_type):
+            results.append(
+                TicketSyncResult(
+                    client_ticket_id=item.client_ticket_id,
+                    result="rejected",
+                    message="Biogas contract numbers must use the format HBGC-00001.",
+                )
+            )
+            rejected += 1
+            continue
+
         existing = db.scalar(
             select(ServiceTicket).where(ServiceTicket.client_ticket_id == item.client_ticket_id)
         )

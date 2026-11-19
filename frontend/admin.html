@@ -19,10 +19,12 @@
     </section>
     <!-- Administrative tools are revealed only after checking the account's role. -->
     <section id="login-panel" class="panel auth-panel">
-      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Administrator sign-in</h2><p>Use your administrator-issued access token.</p></div></div>
+      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Administrator sign-in</h2><p>Sign in with your administrator username and password.</p></div></div>
       <form id="login-form" class="auth-form">
-        <label for="access-token">Access token</label>
-        <input id="access-token" type="password" autocomplete="current-password" required>
+        <label for="username-login">Username</label>
+        <input id="username-login" autocomplete="username" minlength="3" maxlength="80" required>
+        <label for="password-login">Password</label>
+        <input id="password-login" type="password" autocomplete="current-password" minlength="12" maxlength="256" required>
         <button class="button button-primary" type="submit">Sign in</button>
       </form>
       <div id="login-error" class="form-error" role="alert" hidden></div>
@@ -34,7 +36,7 @@
           <div class="section-heading"><span class="section-icon">🧰</span><div><h2>Register hardware</h2><p>Add a uniquely identified biogas or solar unit to the registry.</p></div></div>
           <form id="hardware-form" class="auth-form">
             <label for="hardware-id">Hardware ID</label>
-            <input id="hardware-id" maxlength="80" autocomplete="off" placeholder="BIO-RW-0002" required>
+            <input id="hardware-id" maxlength="80" autocomplete="off" placeholder="HBGC-00002" required>
             <label for="model-type">System type</label>
             <select id="model-type" required><option value="biogas">Biogas digester</option><option value="solar">PAYGo solar</option></select>
             <label for="district">District</label>
@@ -60,9 +62,10 @@
         </section>
       </div>
       <section class="panel users-panel">
-        <div class="section-heading"><span class="section-icon">👥</span><div><h2>User access</h2><p>Create a technician/admin account and revoke access when required. New tokens are shown only once.</p></div></div>
+        <div class="section-heading"><span class="section-icon">👥</span><div><h2>User access</h2><p>Create technician/admin accounts with passwords and revoke access when required.</p></div></div>
         <form id="user-form" class="user-form">
           <label for="username">Username<input id="username" minlength="3" maxlength="80" pattern="[A-Za-z0-9_-]{3,80}" autocomplete="off" required></label>
+          <label for="user-password">Password<input id="user-password" type="password" minlength="12" maxlength="256" autocomplete="new-password" required></label>
           <label for="user-role">Role<select id="user-role"><option value="technician">Technician</option><option value="admin">Administrator</option></select></label>
           <label for="user-district">District<input id="user-district" maxlength="100"></label>
           <label for="user-sector">Sector<input id="user-sector" maxlength="100"></label>

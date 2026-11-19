@@ -38,6 +38,10 @@ def update_tree(
     tree = db.scalar(select(DiagnosticTree).where(DiagnosticTree.slug == slug))
     if tree is None:
         raise HTTPException(status_code=404, detail="Diagnostic tree not found.")
+    if payload.appliance_type != tree.appliance_type:
+        raise HTTPException(status_code=422, detail="A diagnostic tree cannot change its appliance type.")
+    if payload.version <= tree.version:
+        raise HTTPException(status_code=422, detail="The new diagnostic tree version must increase.")
     tree.appliance_type = payload.appliance_type
     tree.version = payload.version
     tree.content = payload.content
