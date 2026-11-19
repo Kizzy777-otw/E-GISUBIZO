@@ -55,7 +55,6 @@ def parse_installation_workbook(path: str | Path) -> list[dict]:
         year_value = text(row[1])
         if year_value and year_value.startswith("CY"):
             installation_year = year_value
-            continue
 
         contract = text(row[7])
         if contract is None:
