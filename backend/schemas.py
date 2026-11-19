@@ -70,6 +70,23 @@ class HardwareValidationResponse(HardwareUnitResponse):
     valid: Literal[True] = True
 
 
+class HardwareUnitAdminResponse(HardwareUnitResponse):
+    account_name: str | None = None
+    owner_name: str | None = None
+    hub: str | None = None
+    county: str | None = None
+    constituency: str | None = None
+    village: str | None = None
+    appraisal_status: str | None = None
+    commissioning_status: str | None = None
+    contract_status: str | None = None
+    payment_format: str | None = None
+    lead_source: str | None = None
+    sales_person: str | None = None
+    installation_year: str | None = None
+    source_reported_at: datetime | None = None
+
+
 class DiagnosticTreeResponse(BaseModel):
     slug: str
     appliance_type: HardwareType
