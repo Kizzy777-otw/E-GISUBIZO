@@ -10,6 +10,7 @@ from ..database import get_db
 from ..models import AuditLog, HardwareUnit, User
 from ..schemas import (
     HardwareRegistrationRequest,
+    HardwareUnitAdminResponse,
     HardwareUnitResponse,
     HardwareValidationRequest,
     HardwareValidationResponse,
@@ -18,6 +19,14 @@ from .auth import require_role
 
 router = APIRouter(prefix="/api/v1/hardware", tags=["hardware"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
+
+
+@router.get("", response_model=list[HardwareUnitAdminResponse])
+def list_hardware(
+    db: DatabaseSession,
+    _admin: Annotated[User, Depends(require_role("admin"))],
+) -> list[HardwareUnit]:
+    return list(db.scalars(select(HardwareUnit).order_by(HardwareUnit.hardware_id)).all())
 
 
 @router.post("/validate", response_model=HardwareValidationResponse)

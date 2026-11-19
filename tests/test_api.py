@@ -6,9 +6,11 @@ import re
 
 import pytest
 from fastapi.testclient import TestClient
+from openpyxl import Workbook
 
 from backend.database import should_create_schema, validate_database_configuration
 from backend.schemas import DiagnosticTreeUpdate
+from backend.import_installations import parse_installation_workbook
 from backend.seed import DIAGNOSTIC_TREES
 
 ADMIN_HEADERS = {"Authorization": "Bearer test-admin-token"}
@@ -33,6 +35,47 @@ def test_diagnostic_trees_are_seeded(api_client: TestClient) -> None:
     assert response.status_code == 200
     trees = response.json()
     assert {tree["slug"] for tree in trees} == {"biogas-low-flame", "solar-red-indicator"}
+
+
+def test_installation_workbook_parser(tmp_path) -> None:
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Rwanda Total Installations"
+    sheet["B3"] = "As of 2026-11-19 20:07:45 Greenwich Mean Time/GMT"
+    sheet["D18"] = "Appraisal status"
+    sheet["E18"] = "Commissioning Status"
+    sheet["F18"] = "Account Name"
+    sheet["G18"] = "Full Name"
+    sheet["H18"] = "HBG Contract Name"
+    sheet["I18"] = "HBG Hub"
+    sheet["J18"] = "County"
+    sheet["K18"] = "Constituency"
+    sheet["L18"] = "Village"
+    sheet["M18"] = "Contract Status"
+    sheet["N18"] = "Payment Format"
+    sheet["O18"] = "Lead Source"
+    sheet["Q18"] = "Sales Person"
+    sheet["B19"] = "CY2026"
+    sheet.append([None, None, None, "Done", "Done", "Homestead Test [Village]", "Test Owner [1190000000000000]", "HBGC-99999", "Rwanda - Eastern Province", "Eastern Province - Gatsibo", "Gatsibo Test", "Test Village", "Fulfilled", "UNDP", "Feasibility/Baseline Survey", None, "Test Sales [123]"])
+
+    path = tmp_path / "installations.xlsx"
+    workbook.save(path)
+
+    records = parse_installation_workbook(path)
+
+    assert len(records) == 1
+    assert records[0]["hardware_id"] == "HBGC-99999"
+    assert records[0]["owner_name"] == "Test Owner"
+    assert records[0]["village"] == "Test Village"
+    assert records[0]["installation_year"] == "CY2026"
+
+
+def test_admin_hardware_registry_includes_metadata(api_client: TestClient) -> None:
+    response = api_client.get("/api/v1/hardware", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200
+    units = response.json()
+    assert any(unit["hardware_id"] == "HBGC-00001" for unit in units)
 
 
 def test_password_login_for_seeded_admin_and_wrong_password(api_client: TestClient) -> None:

@@ -116,13 +116,36 @@
 
   let currentUserId;
 
+  async function loadHardware() {
+    const units = await request("/hardware");
+    const rows = document.getElementById("hardware-rows");
+    rows.replaceChildren();
+    for (const unit of units) {
+      const row = document.createElement("tr");
+      for (const value of [
+        unit.hardware_id,
+        unit.owner_name || "—",
+        unit.village || "—",
+        `${unit.sector || "—"} / ${unit.district || "—"}`,
+        unit.contract_status || "—",
+        unit.sales_person || "—",
+      ]) {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      }
+      rows.append(row);
+    }
+    document.getElementById("hardware-count").textContent = `${units.length} registered installations`;
+  }
+
   async function authenticate() {
     const user = await request("/auth/me");
     if (user.role !== "admin") throw new Error("This token does not have administrator access.");
     currentUserId = user.id;
     document.getElementById("admin-identity").textContent = `Signed in: ${user.username}`;
     // Load both admin datasets before revealing any edit controls.
-    await Promise.all([loadTrees(), loadUsers()]);
+    await Promise.all([loadTrees(), loadUsers(), loadHardware()]);
     setSignedIn(true);
   }
 
@@ -184,6 +207,7 @@
         }),
       });
       form.reset();
+      await loadHardware();
       showMessage(hardwareMessage, `${unit.hardware_id} registered for ${unit.sector}, ${unit.district}.`, "success");
     } catch (error) {
       showMessage(hardwareMessage, error.message, "error");
