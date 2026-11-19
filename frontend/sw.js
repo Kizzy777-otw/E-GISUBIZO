@@ -102,19 +102,24 @@ async function syncTickets() {
   try {
     const queued = await readQueued(db);
     if (!queued.length) return;
-    const response = await fetch("/api/v1/tickets/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ tickets: queued.map(({ state, created_at, ...ticket }) => ticket) }),
-    });
-    if (!response.ok) throw new Error(`Ticket sync failed (${response.status}).`);
-    const result = await response.json();
-    // Keep failed/rejected records for the foreground UI; delete only server acknowledgements.
-    for (const item of result.results || []) {
-      if (item.result === "synced" || item.result === "already_synced") {
-        await updateTicket(db, item.client_ticket_id, null);
-      } else {
-        await updateTicket(db, item.client_ticket_id, { state: "rejected", sync_error: item.message || "Ticket rejected." });
+    for (let offset = 0; offset < queued.length; offset += 100) {
+      const batch = queued.slice(offset, offset + 100);
+      const response = await fetch("/api/v1/tickets/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          tickets: batch.map(({ state, created_at, ...ticket }) => ticket),
+        }),
+      });
+      if (!response.ok) throw new Error(`Ticket sync failed (${response.status}).`);
+      const result = await response.json();
+      // Keep failed/rejected records for the foreground UI; delete only server acknowledgements.
+      for (const item of result.results || []) {
+        if (item.result === "synced" || item.result === "already_synced") {
+          await updateTicket(db, item.client_ticket_id, null);
+        } else {
+          await updateTicket(db, item.client_ticket_id, { state: "rejected", sync_error: item.message || "Ticket rejected." });
+        }
       }
     }
   } finally {

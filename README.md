@@ -7,8 +7,9 @@ An offline-first maintenance platform for rural biogas digesters and PAYGo solar
 - Kinyarwanda-first, icon-led diagnostic questions for biogas low flame and solar red battery/inverter indicators, with one question per screen and no more than three decision answers before a resolution or ticket.
 - Registered hardware ID and model validation. A unit validated while online is remembered on that device for future offline diagnoses.
 - Database-backed editable JSON trees, fault-code payloads, idempotent queued-ticket sync, technician status filtering, zone scoping, and append-only audit events.
+- Diagnostic tree updates are checked for a valid reachable graph and a maximum of three questions per path. Browser sync sends queued tickets in batches of at most 100.
 - Mock SMS dispatch logging when a new ticket syncs; no live SMS gateway is contacted.
-- Local PWA app-shell files and decision trees are small and have no third-party runtime assets. Measure the uncompressed cached shell with `Get-ChildItem frontend | Measure-Object -Property Length -Sum`; keep it below 1 MB when adding assets.
+- Local PWA app-shell files and decision trees are small and have no third-party runtime assets. The backend test suite checks the uncompressed cached shell plus seeded trees against the 1 MB limit.
 
 ## Set up and run locally
 
@@ -62,7 +63,7 @@ export TECHNICIAN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_ur
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`. On startup, the app creates the database tables, seeds the diagnostic trees and pilot hardware IDs `BIO-RW-0001` (biogas) and `SOL-RW-0001` (solar), and creates admin/technician accounts for any tokens supplied in the environment. The citizen PWA is at `/`, technician dispatch is at `/technician.html`, and administration is at `/admin.html`. Sign in with the corresponding token generated above. API documentation is available at `/docs`.
+Open `http://127.0.0.1:8000/`. For local/test runs only, the app creates the database tables and seeds diagnostic trees, pilot hardware IDs `HBGC-00001` (biogas) and `SOL-RW-0001` (solar), and accounts for configured tokens. Biogas contract numbers must use the `HBGC-` prefix followed by five digits; for example, `BIO-RW-0001` is not valid. The citizen PWA is at `/`, technician dispatch is at `/technician.html`, and administration is at `/admin.html`. Sign in with the corresponding token generated above. API documentation is available at `/docs`.
 
 Optional configuration:
 
@@ -70,6 +71,8 @@ Optional configuration:
 - `TECHNICIAN_DISTRICT`: district assigned to the seeded technician account; defaults to `Rulindo`.
 - `TECHNICIAN_SECTOR`: optional sector assigned to the seeded technician account; unset means no sector filter.
 - `ALLOWED_ORIGINS`: comma-separated trusted origins, only needed when hosting the frontend separately. Same-origin deployments should leave it unset.
+- `DB_AUTO_CREATE`: local-only schema creation toggle. Deployed/staging environments must use Alembic migrations; the application rejects `DB_AUTO_CREATE=true` there.
+- `DB_POOL_SIZE`: PostgreSQL application pool size per function instance (default `2`, overflow disabled). Use the pooled Neon URL for Vercel runtime traffic.
 
 For a quick smoke check while the server is running:
 
@@ -90,6 +93,12 @@ python -m pytest
 
 The API tests use an isolated temporary SQLite database and seeded test-only credentials; they do not connect to Neon or a deployed environment.
 
+## Migrations and release operations
+
+Alembic revisions are in `migrations/`. Local development/tests default to metadata table creation; Vercel, staging, and production never auto-create or upgrade database schemas at function startup. Run migrations from a controlled release environment with the direct (non-pooled) `DATABASE_MIGRATION_URL` or `DATABASE_URL_UNPOOLED`; do not store the direct migration URL in the Vercel runtime environment. For an empty database run `python -m alembic upgrade head`, then `python -m backend.seed`. Existing databases created with `create_all` need a reviewed schema comparison and backup before baselining with `python -m alembic stamp 0001_initial`.
+
+See [Database Operations & Production Runbook](./docs/PRODUCTION_RUNBOOK.md) for staging/prod separation, Vercel Preview access, migrations, restore/backup verification, and monitoring. See the [Pilot & Offline/2G-3G Checklist](./docs/PILOT_CHECKLIST.md) for field and low-bandwidth validation.
+
 ## Free pilot deployment (Vercel Hobby + Neon Free)
 
 This deployment targets **pilot/testing use**, not production-critical data. Vercel Hobby includes hosted HTTPS and Python FastAPI functions; Neon Free supplies PostgreSQL. Both plans have usage and recovery limitations, and the database can scale to zero after inactivity, adding a cold start. A free-tier deployment does not provide production-grade availability or recovery guarantees. Check Vercel's current Hobby terms and limits before inviting a wider audience.
@@ -109,10 +118,10 @@ This deployment targets **pilot/testing use**, not production-critical data. Ver
 
 ### Staging and pilot readiness
 
-- Staging is deployed at [the Vercel Preview URL](https://e-gisubizo-fiokbp13l-kizzy777-otw.vercel.app/). Preview uses a separate Neon `staging` schema-only branch; it does not copy production records. Its `DATABASE_URL`, `APP_ENV`, `ADMIN_API_TOKEN`, and `TECHNICIAN_API_TOKEN` are configured as Vercel Preview variables, separate from Production.
+- Staging is deployed at [the Vercel Preview URL](https://e-gisubizo-fiokbp13l-kizzy777-otw.vercel.app/). The existing Preview setup is documented to use a Neon `staging` schema-only branch; confirm the current Vercel Preview variables before pilot use. A separate Free Neon project, `e-gisubizo-pilot` (`fragrant-math-02674688`, `aws-eu-central-1`), has now been created and migrated/seeded, but has not yet been connected to Vercel Preview. It is pilot-only, not production-grade.
 - Vercel Deployment Protection currently requires Vercel authentication to open the Preview URL. Keep it protected unless access is deliberately arranged for pilot participants.
 - The ignored local file `.env.staging.local` contains the staging credentials for local reference. Never commit or share it. The production credentials remain in `.env.production.local`.
-- The staging API has been checked with both pilot units: `BIO-RW-0001` / `biogas` and `SOL-RW-0001` / `solar`.
+- After deploying this version, verify the staging API with both pilot units: `HBGC-00001` / `biogas` and `SOL-RW-0001` / `solar`.
 - **Field pilot validation is still outstanding.** Test with consenting rural households and technicians, including low-bandwidth and offline diagnosis, hardware registration, ticket queuing and sync, and dispatch updates. Record comprehension, diagnostic accuracy, and safety feedback before revising Kinyarwanda wording or decision trees.
 - **Production-grade operations are still outstanding.** The current free-tier deployment is for pilot/testing, not production-critical use. Before a wider rollout, select plans that meet availability and backup requirements, configure and test database backups/restores, and confirm the registered hardware inventory and operational monitoring.
 

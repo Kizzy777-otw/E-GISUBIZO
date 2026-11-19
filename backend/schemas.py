@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 HardwareType = Literal["biogas", "solar"]
@@ -20,6 +20,15 @@ def normalize_hardware_id(value: str) -> str:
     return normalized
 
 
+def hardware_id_matches_model(hardware_id: str, model_type: HardwareType) -> bool:
+    return model_type != "biogas" or re.fullmatch(r"HBGC-\d{5}", hardware_id) is not None
+
+
+def validate_hardware_id_for_model(hardware_id: str, model_type: HardwareType) -> None:
+    if not hardware_id_matches_model(hardware_id, model_type):
+        raise ValueError("Biogas contract numbers must use the format HBGC-00001.")
+
+
 class HardwareValidationRequest(BaseModel):
     hardware_id: str
     model_type: HardwareType
@@ -28,6 +37,11 @@ class HardwareValidationRequest(BaseModel):
     @classmethod
     def clean_hardware_id(cls, value: str) -> str:
         return normalize_hardware_id(value)
+
+    @model_validator(mode="after")
+    def validate_model_hardware_id(self) -> "HardwareValidationRequest":
+        validate_hardware_id_for_model(self.hardware_id, self.model_type)
+        return self
 
 
 class HardwareRegistrationRequest(HardwareValidationRequest):
@@ -70,6 +84,61 @@ class DiagnosticTreeUpdate(BaseModel):
     version: int = Field(ge=1)
     content: dict[str, Any]
     active: bool = True
+
+    @model_validator(mode="after")
+    def validate_tree_graph(self) -> "DiagnosticTreeUpdate":
+        nodes = self.content.get("nodes")
+        start_node = self.content.get("start_node")
+        if not isinstance(nodes, dict) or not nodes or len(nodes) > 100:
+            raise ValueError("A diagnostic tree must contain between 1 and 100 nodes.")
+        if not isinstance(start_node, str) or start_node not in nodes:
+            raise ValueError("The diagnostic tree start_node must reference an existing node.")
+
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        maximum_questions_seen: dict[str, int] = {}
+
+        def visit(node_id: str, questions_seen: int) -> None:
+            if node_id in visiting:
+                raise ValueError("Diagnostic trees cannot contain cycles.")
+            if maximum_questions_seen.get(node_id, -1) >= questions_seen:
+                return
+
+            node = nodes.get(node_id)
+            if not isinstance(node, dict):
+                raise ValueError(f"Diagnostic node {node_id!r} must be an object.")
+            node_type = node.get("type")
+            if not isinstance(node_type, str) or node_type not in {"question", "resolution", "ticket"}:
+                raise ValueError(f"Diagnostic node {node_id!r} has an unsupported type.")
+            next_nodes: list[str] = []
+            if node_type == "question":
+                questions_seen += 1
+                if questions_seen > 3:
+                    raise ValueError("A diagnostic path cannot contain more than three questions.")
+                answers = node.get("answers")
+                if not isinstance(answers, list) or not answers or len(answers) > 10:
+                    raise ValueError(f"Question node {node_id!r} must have 1 to 10 answers.")
+                for answer in answers:
+                    if not isinstance(answer, dict) or not isinstance(answer.get("next"), str):
+                        raise ValueError(f"Every answer in question node {node_id!r} needs a next node.")
+                    next_nodes.append(answer["next"])
+            elif node_type == "ticket":
+                if not all(isinstance(node.get(key), str) and node[key] for key in ("fault_code", "fault_category")):
+                    raise ValueError(f"Ticket node {node_id!r} needs a fault code and category.")
+
+            visiting.add(node_id)
+            for next_node in next_nodes:
+                if next_node not in nodes:
+                    raise ValueError(f"Diagnostic node {node_id!r} points to a missing node.")
+                visit(next_node, questions_seen)
+            visiting.remove(node_id)
+            visited.add(node_id)
+            maximum_questions_seen[node_id] = max(questions_seen, maximum_questions_seen.get(node_id, -1))
+
+        visit(start_node, 0)
+        if visited != set(nodes):
+            raise ValueError("Every diagnostic node must be reachable from start_node.")
+        return self
 
 
 class FaultCodePayload(BaseModel):

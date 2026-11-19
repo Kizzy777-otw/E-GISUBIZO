@@ -6,7 +6,8 @@ import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import DiagnosticTree, HardwareUnit, User, utc_now
+from .database import SessionLocal, validate_database_configuration
+from .models import DiagnosticTree, HardwareUnit, User
 
 
 DIAGNOSTIC_TREES: tuple[dict, ...] = (
@@ -191,7 +192,7 @@ def seed_initial_data(db: Session) -> None:
             db.add(DiagnosticTree(**tree_data))
 
     demo_units = (
-        ("BIO-RW-0001", "biogas"),
+        ("HBGC-00001", "biogas"),
         ("SOL-RW-0001", "solar"),
     )
     for hardware_id, model_type in demo_units:
@@ -224,3 +225,9 @@ def seed_initial_data(db: Session) -> None:
             user.sector = os.getenv("TECHNICIAN_SECTOR") or None
 
     db.commit()
+
+
+if __name__ == "__main__":
+    validate_database_configuration()
+    with SessionLocal() as session:
+        seed_initial_data(session)

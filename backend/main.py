@@ -9,8 +9,9 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
-from .database import Base, SessionLocal, engine, validate_database_configuration
+from .database import Base, SessionLocal, engine, should_create_schema, validate_database_configuration
 from .routers import auth, hardware, notifications, tickets, trees, users
 from .seed import seed_initial_data
 
@@ -21,9 +22,10 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     validate_database_configuration()
-    Base.metadata.create_all(bind=engine)
-    with SessionLocal() as db:
-        seed_initial_data(db)
+    if should_create_schema():
+        Base.metadata.create_all(bind=engine)
+        with SessionLocal() as db:
+            seed_initial_data(db)
     yield
 
 
@@ -33,6 +35,15 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.get("/healthz", tags=["health"])
+def health_check() -> dict[str, str]:
+    """Return readiness only after the configured database accepts a query."""
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+    return {"status": "ok"}
+
 
 allowed_origins = [
     origin.strip()
