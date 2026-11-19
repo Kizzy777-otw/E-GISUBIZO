@@ -35,6 +35,46 @@ def test_diagnostic_trees_are_seeded(api_client: TestClient) -> None:
     assert {tree["slug"] for tree in trees} == {"biogas-low-flame", "solar-red-indicator"}
 
 
+def test_password_login_for_seeded_admin_and_wrong_password(api_client: TestClient) -> None:
+    valid = api_client.post(
+        "/api/v1/auth/login",
+        json={"username": "administrator", "password": "test-admin-password"},
+    )
+    invalid = api_client.post(
+        "/api/v1/auth/login",
+        json={"username": "administrator", "password": "wrong-password"},
+    )
+
+    assert valid.status_code == 200
+    assert valid.json()["user"]["role"] == "admin"
+    assert valid.json()["access_token"]
+    assert invalid.status_code == 401
+
+    session_headers = {"Authorization": f"Bearer {valid.json()['access_token']}"}
+    assert api_client.get("/api/v1/auth/me", headers=session_headers).status_code == 200
+    assert api_client.post("/api/v1/auth/logout", headers=session_headers).json()["status"] == "logged_out"
+    assert api_client.get("/api/v1/auth/me", headers=session_headers).status_code == 401
+
+
+def test_admin_password_user_creation(api_client: TestClient) -> None:
+    payload = {
+        "username": "field-admin",
+        "password": "field-admin-password",
+        "role": "admin",
+        "district": None,
+        "sector": None,
+    }
+    created = api_client.post("/api/v1/users", json=payload, headers=ADMIN_HEADERS)
+
+    assert created.status_code == 201
+    login = api_client.post(
+        "/api/v1/auth/login",
+        json={"username": "field-admin", "password": "field-admin-password"},
+    )
+    assert login.status_code == 200
+    assert login.json()["user"]["role"] == "admin"
+
+
 def test_diagnostic_tree_update_rejects_more_than_three_questions(api_client: TestClient) -> None:
     response = api_client.get("/api/v1/diagnostic-trees")
     tree = next(item for item in response.json() if item["slug"] == "biogas-low-flame")

@@ -1,6 +1,6 @@
 # E-Gisubizo
 
-An offline-first maintenance platform for rural biogas digesters and PAYGo solar systems. The citizen PWA downloads its decision trees for offline use, validates hardware against the registry before a diagnostic, and queues technician tickets in IndexedDB. The dispatch view is protected by bearer-token authentication.
+An offline-first maintenance platform for rural biogas digesters and PAYGo solar systems. The citizen PWA downloads its decision trees for offline use, validates hardware against the registry before a diagnostic, and queues technician tickets in IndexedDB. The dispatch and administration views use username/password login; passwords are Argon2-hashed, and the UI receives an internal bearer session for API calls.
 
 ## Requirements implemented from the SRS
 
@@ -50,6 +50,9 @@ The app defaults to a local SQLite database (`egisubizo.db` in the current direc
 Windows PowerShell:
 
 ```powershell
+$env:ADMIN_PASSWORD = "Replace-With-An-Admin-Password"
+$env:TECHNICIAN_PASSWORD = "Replace-With-A-Technician-Password"
+# Optional legacy/API-only credentials; password login does not require these.
 $env:ADMIN_API_TOKEN = (python -c "import secrets; print(secrets.token_urlsafe(32))")
 $env:TECHNICIAN_API_TOKEN = (python -c "import secrets; print(secrets.token_urlsafe(32))")
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
@@ -58,6 +61,9 @@ uvicorn backend.main:app --host 127.0.0.1 --port 8000
 macOS / Linux:
 
 ```shell
+export ADMIN_PASSWORD="Replace-With-An-Admin-Password"
+export TECHNICIAN_PASSWORD="Replace-With-A-Technician-Password"
+# Optional legacy/API-only credentials; password login does not require these.
 export ADMIN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
 export TECHNICIAN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
@@ -70,6 +76,8 @@ Optional configuration:
 - `DATABASE_URL`: SQLAlchemy database URL. For local SQLite, leave it unset. To use PostgreSQL, install the declared `psycopg[binary]` dependency (included by `pip install -e .`) and use a `postgresql+psycopg://` URL.
 - `TECHNICIAN_DISTRICT`: district assigned to the seeded technician account; defaults to `Rulindo`.
 - `TECHNICIAN_SECTOR`: optional sector assigned to the seeded technician account; unset means no sector filter.
+- `ADMIN_PASSWORD`: initial administrator password, at least 12 characters. Stored only as an Argon2 hash.
+- `TECHNICIAN_PASSWORD`: initial technician password, at least 12 characters. Stored only as an Argon2 hash.
 - `ALLOWED_ORIGINS`: comma-separated trusted origins, only needed when hosting the frontend separately. Same-origin deployments should leave it unset.
 - `DB_AUTO_CREATE`: local-only schema creation toggle. Deployed/staging environments must use Alembic migrations; the application rejects `DB_AUTO_CREATE=true` there.
 - `DB_POOL_SIZE`: PostgreSQL application pool size per function instance (default `2`, overflow disabled). Use the pooled Neon URL for Vercel runtime traffic.
@@ -108,8 +116,10 @@ This deployment targets **pilot/testing use**, not production-critical data. Ver
 3. In **Project → Settings → Environment Variables**, set the Production variables:
    - `APP_ENV` = `production`
    - `DATABASE_URL` = Neon connection string, with the scheme changed from `postgresql://` to `postgresql+psycopg://` and `sslmode=require` enabled.
-   - `ADMIN_API_TOKEN` = a unique, long random administrator token.
-   - `TECHNICIAN_API_TOKEN` = a different, unique technician token.
+   - `ADMIN_PASSWORD` = a unique administrator password of at least 12 characters.
+   - `TECHNICIAN_PASSWORD` = a unique technician password of at least 12 characters.
+   - `ADMIN_API_TOKEN` = optional legacy/API-only bearer token.
+   - `TECHNICIAN_API_TOKEN` = optional legacy/API-only bearer token.
    - `TECHNICIAN_DISTRICT` = the initial technician district, for example `Rulindo`.
    - `TECHNICIAN_SECTOR` = optional technician sector, for example `Base`.
    Keep credentials in Vercel's environment-variable settings; never put them in Git or chat.
@@ -130,11 +140,11 @@ Production mode refuses to start with SQLite because function filesystems are no
 ## Production and administration
 
 - Use the hosting platform's HTTPS/TLS endpoint in production; the development Uvicorn command above is intentionally local HTTP. For a self-hosted deployment, terminate TLS at a trusted reverse proxy.
-- Set long, unique `TECHNICIAN_API_TOKEN` and `ADMIN_API_TOKEN` secrets. Only SHA-256 token hashes are persisted. Do not expose tokens in URLs or store technician tokens beyond the current browser session.
+- Set strong, unique `TECHNICIAN_PASSWORD` and `ADMIN_PASSWORD` values. Passwords are Argon2-hashed. Legacy/API bearer tokens, when configured, are stored only by SHA-256 hash. Password-login sessions expire after 24 hours and should not be placed in URLs.
 - Configure a durable database, backups, monitoring, and restricted CORS origins before deployment. Live SMS, USSD, and telemetry integrations are out of scope.
 - An administrator can register a unit with `POST /api/v1/hardware` and update an existing tree with `PUT /api/v1/diagnostic-trees/{slug}` using `Authorization: Bearer <ADMIN_API_TOKEN>`. API docs are available at `/docs`.
 - The administrator web view at `/admin.html` provides a sign-in, hardware registration form, and JSON decision-tree editor.
-- Administrators can issue technician/admin accounts and revoke or restore access at `/api/v1/users`; newly issued bearer tokens are shown once in the admin view and must be copied securely.
+- Administrators can issue password-based technician/admin accounts and revoke or restore access at `/api/v1/users`. Share each new password through an approved secure channel; legacy bearer-token credentials remain available for API integrations.
 - Citizen offline mode can validate only hardware already validated online on that same browser. Unknown hardware cannot safely pass registry validation without a connection.
 
 ## API overview

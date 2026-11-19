@@ -12,7 +12,7 @@ Keep three different databases/branches and credentials:
 | Vercel Preview | `staging` | Neon `e-gisubizo-pilot` project, `main` branch | Pooled pilot URL |
 | Vercel Production | `production` | Dedicated production Neon project/branch | Pooled production URL |
 
-Set `ADMIN_API_TOKEN` and `TECHNICIAN_API_TOKEN` independently for Preview and Production. Do not copy production credentials or data into Preview. Keep `ALLOWED_ORIGINS` unset for same-origin Vercel routing; when hosting the frontend elsewhere, list only its exact HTTPS origins. Never use `*`.
+Set `ADMIN_PASSWORD` and `TECHNICIAN_PASSWORD` independently for Preview and Production. Optional `ADMIN_API_TOKEN` and `TECHNICIAN_API_TOKEN` values remain legacy/API-only compatibility credentials. Do not copy production credentials or data into Preview. Keep `ALLOWED_ORIGINS` unset for same-origin Vercel routing; when hosting the frontend elsewhere, list only its exact HTTPS origins. Never use `*`.
 
 Vercel's `/api/(.*)` rewrite sends API requests to FastAPI; `/docs`, `/openapi.json`, and `/redoc` also go to FastAPI, and the final rewrite serves frontend assets. Keep the citizen PWA and API on the same origin so browser requests and service-worker scope remain same-origin. `/sw.js` must remain `no-cache` so clients can discover app-shell updates.
 `/healthz` is routed to FastAPI and checks that the configured database accepts a query; monitor it as a dependency-health check, not as proof that the full pilot flow works.

@@ -20,10 +20,12 @@
     </section>
     <!-- Ticket data stays hidden until the API verifies the technician's bearer token. -->
     <section id="login-panel" class="panel auth-panel">
-      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Technician sign-in</h2><p>Use your administrator-issued access token.</p></div></div>
+      <div class="section-heading"><span class="section-icon">🔐</span><div><h2>Technician sign-in</h2><p>Sign in with your technician username and password.</p></div></div>
       <form id="login-form" class="auth-form">
-        <label for="access-token">Access token</label>
-        <input id="access-token" type="password" autocomplete="current-password" required>
+        <label for="username-login">Username</label>
+        <input id="username-login" autocomplete="username" minlength="3" maxlength="80" required>
+        <label for="password-login">Password</label>
+        <input id="password-login" type="password" autocomplete="current-password" minlength="12" maxlength="256" required>
         <button class="button button-primary" type="submit">Sign in</button>
       </form>
       <div id="login-error" class="form-error" role="alert" hidden></div>

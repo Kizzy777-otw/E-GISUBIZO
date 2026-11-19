@@ -232,8 +232,19 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PasswordLoginRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=80)
+    password: str = Field(min_length=12, max_length=256)
+
+
+class PasswordLoginResponse(BaseModel):
+    access_token: str
+    user: UserResponse
+
+
 class UserCreateRequest(BaseModel):
     username: str = Field(pattern=r"^[A-Za-z0-9_-]{3,80}$")
+    password: str = Field(min_length=12, max_length=256)
     role: Literal["technician", "admin"]
     district: str | None = Field(default=None, max_length=100)
     sector: str | None = Field(default=None, max_length=100)

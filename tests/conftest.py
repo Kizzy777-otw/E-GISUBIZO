@@ -14,6 +14,8 @@ os.environ["APP_ENV"] = "test"
 os.environ.pop("VERCEL", None)
 os.environ["ADMIN_API_TOKEN"] = "test-admin-token"
 os.environ["TECHNICIAN_API_TOKEN"] = "test-technician-token"
+os.environ["ADMIN_PASSWORD"] = "test-admin-password"
+os.environ["TECHNICIAN_PASSWORD"] = "test-tech-password"
 
 from fastapi.testclient import TestClient
 

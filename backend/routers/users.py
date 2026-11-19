@@ -4,6 +4,7 @@ from hashlib import sha256
 import secrets
 from typing import Annotated
 
+from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +17,7 @@ from .auth import require_role
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 DatabaseSession = Annotated[Session, Depends(get_db)]
+password_hasher = PasswordHasher()
 
 
 @router.get("", response_model=list[UserResponse])
@@ -41,6 +43,7 @@ def create_user(
         username=payload.username,
         role=payload.role,
         token_hash=sha256(access_token.encode("utf-8")).hexdigest(),
+        password_hash=password_hasher.hash(payload.password),
         district=payload.district,
         sector=payload.sector,
         active=True,
