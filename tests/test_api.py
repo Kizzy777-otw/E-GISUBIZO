@@ -56,7 +56,19 @@ def test_installation_workbook_parser(tmp_path) -> None:
     sheet["O18"] = "Lead Source"
     sheet["Q18"] = "Sales Person"
     sheet["B19"] = "CY2026"
-    sheet.append([None, None, None, "Done", "Done", "Homestead Test [Village]", "Test Owner [1190000000000000]", "HBGC-99999", "Rwanda - Eastern Province", "Eastern Province - Gatsibo", "Gatsibo Test", "Test Village", "Fulfilled", "UNDP", "Feasibility/Baseline Survey", None, "Test Sales [123]"])
+    sheet["D19"] = "Done"
+    sheet["E19"] = "Done"
+    sheet["F19"] = "Homestead Test [Village]"
+    sheet["G19"] = "Test Owner [1190000000000000]"
+    sheet["H19"] = "HBGC-99999"
+    sheet["I19"] = "Rwanda - Eastern Province"
+    sheet["J19"] = "Eastern Province - Gatsibo"
+    sheet["K19"] = "Gatsibo Test"
+    sheet["L19"] = "Test Village"
+    sheet["M19"] = "Fulfilled"
+    sheet["N19"] = "UNDP"
+    sheet["O19"] = "Feasibility/Baseline Survey"
+    sheet["Q19"] = "Test Sales [123]"
 
     path = tmp_path / "installations.xlsx"
     workbook.save(path)
