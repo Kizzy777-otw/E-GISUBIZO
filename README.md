@@ -1,5 +1,14 @@
 # E-Gisubizo
 
+## Public links
+
+- **Live product:** https://e-gisubizo.vercel.app/
+- **Public GitHub repository:** https://github.com/Kizzy777-otw/E-GISUBIZO
+- **API health check:** https://e-gisubizo.vercel.app/healthz
+- **API documentation:** https://e-gisubizo.vercel.app/docs
+
+The live product is a Progressive Web App (PWA), so no APK or desktop installer is required. It can be opened in Chrome or Edge and installed on a compatible desktop or Android device.
+
 An offline-first maintenance platform for rural biogas digesters and PAYGo solar systems. The citizen PWA downloads its decision trees for offline use, validates hardware against the registry before a diagnostic, and queues technician tickets in IndexedDB. The dispatch and administration views use username/password login; passwords are Argon2-hashed, and the UI receives an internal bearer session for API calls.
 
 ## Requirements implemented from the SRS
@@ -13,17 +22,36 @@ An offline-first maintenance platform for rural biogas digesters and PAYGo solar
 
 ## Set up and run locally
 
+Follow these steps from a clean clone. Do not skip the password setup and activation steps.
+
 ### Requirements
 
 - Git
-- Python 3.12 (the required version is recorded in `.python-version`)
+- Python 3.12 or newer within the 3.12 release line
+- A supported browser: Google Chrome or Microsoft Edge
+- Internet access for the initial clone and package installation
+- PostgreSQL is **not** required for local setup; SQLite is used by default
 
-Clone the repository and change into its root directory:
+Windows requires PowerShell. macOS and Linux require a terminal.
+
+### 1. Clone the repository
+
+Choose a directory for the project, then run:
 
 ```shell
 git clone https://github.com/Kizzy777-otw/E-GISUBIZO.git
 cd E-GISUBIZO
 ```
+
+Confirm that your terminal is inside the repository before continuing:
+
+```shell
+git status
+```
+
+The command should print `On branch main` or your current branch name.
+
+### 2. Create the Python environment
 
 Create and activate a virtual environment, then install the project and its dependencies.
 
@@ -45,7 +73,18 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-The app defaults to a local SQLite database (`egisubizo.db` in the current directory), so no database service is needed for a first run. Configure separate local admin and technician tokens before starting the server.
+Verify the environment and installation:
+
+```shell
+python --version
+python -c "import fastapi, sqlalchemy; print('Backend dependencies installed')"
+```
+
+The Python version should begin with `3.12`, and the dependency check should print `Backend dependencies installed`.
+
+### 3. Configure local passwords
+
+The app defaults to a local SQLite database (`egisubizo.db` in the repository root), so no database service is needed for a first run. Set separate passwords before starting the server. Use different passwords for the administrator and technician accounts, and use at least 12 characters.
 
 Windows PowerShell:
 
@@ -69,7 +108,53 @@ export TECHNICIAN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_ur
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`. For local/test runs only, the app creates the database tables and seeds diagnostic trees, pilot hardware IDs `HBGC-00001` (biogas) and `SOL-RW-0001` (solar), and accounts for configured tokens. Biogas contract numbers must use the `HBGC-` prefix followed by five digits; for example, `BIO-RW-0001` is not valid. The citizen PWA is at `/`, technician dispatch is at `/technician.html`, and administration is at `/admin.html`. Sign in with the corresponding token generated above. API documentation is available at `/docs`.
+Keep this terminal open while using the app. Stopping the server stops local access.
+
+### 4. Open and verify the local app
+
+Open `http://127.0.0.1:8000/`. For local/test runs only, the app creates the database tables and seeds diagnostic trees, pilot hardware IDs `HBGC-00001` (biogas) and `SOL-RW-0001` (solar), and accounts for configured passwords.
+
+- Citizen PWA: `http://127.0.0.1:8000/`
+- Technician dispatch: `http://127.0.0.1:8000/technician.html`
+- Administration: `http://127.0.0.1:8000/admin.html`
+- API documentation: `http://127.0.0.1:8000/docs`
+
+Sign in to the technician or administrator page with the passwords set in step 3. If API bearer tokens were also configured, they remain available for API/testing use.
+
+Biogas contract numbers must use the `HBGC-` prefix followed by five digits; for example, `HBGC-00001` is valid and `BIO-RW-0001` is not valid.
+
+From a second terminal, verify the running backend:
+
+```shell
+curl http://127.0.0.1:8000/healthz
+curl http://127.0.0.1:8000/api/v1/diagnostic-trees
+```
+
+The health check must return `{"status":"ok"}`. The second command must return a JSON list of diagnostic trees.
+
+### 5. Install the PWA on Android or desktop
+
+The public PWA can be used without an APK or desktop installer.
+
+**Android (Chrome):**
+
+1. Open https://e-gisubizo.vercel.app/ in Chrome.
+2. Wait for the page to finish loading.
+3. Open Chrome's menu.
+4. Select **Install app** or **Add to Home screen**.
+5. Confirm the installation.
+6. Open E-Gisubizo from the home screen or app drawer.
+
+**Desktop (Chrome or Microsoft Edge):**
+
+1. Open https://e-gisubizo.vercel.app/ in Chrome or Edge.
+2. Sign in to the relevant page if needed.
+3. Open the browser menu.
+4. Select **Install E-Gisubizo** or **Apps > Install this site as an app**.
+5. Confirm the installation.
+6. Launch E-Gisubizo from the desktop, Start menu, or applications folder.
+
+Installation requires HTTPS. `localhost` works for local PWA testing. To install the Vercel deployment, use the public HTTPS URL rather than an HTTP address.
 
 Optional configuration:
 
