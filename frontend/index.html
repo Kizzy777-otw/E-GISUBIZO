@@ -51,7 +51,13 @@
 
     <!-- JavaScript renders one database-backed decision node at a time in this panel. -->
     <section id="diagnostic-panel" class="panel diagnostic-panel" aria-live="polite" hidden>
-      <div class="diagnostic-topline"><span id="model-label" class="tag"></span><button id="restart-button" class="text-button" type="button">Hindura igikoresho</button></div>
+      <div class="diagnostic-topline">
+        <span id="model-label" class="tag"></span>
+        <div class="diagnostic-actions">
+          <button id="restart-button" class="text-button" type="button">Hindura igikoresho</button>
+          <button id="exit-button" class="text-button" type="button">Funga / Exit</button>
+        </div>
+      </div>
       <div id="diagnostic-content"></div>
     </section>
 

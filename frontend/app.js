@@ -207,6 +207,55 @@
   }
 
   async function saveTicket(node) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "outcome-view ticket-outcome";
+    const icon = document.createElement("div");
+    icon.className = "diagnostic-icon outcome-icon";
+    icon.textContent = node.icon || "🧑‍🔧";
+    const title = document.createElement("h2");
+    safeText(title, node.title || "Twasabye umutekinisiye");
+    const translation = document.createElement("p");
+    translation.className = "translation";
+    safeText(translation, node.translation);
+    const question = document.createElement("p");
+    question.className = "safe-note";
+    question.textContent = "Ni iyihe nomero umutekinisiye ashobora kuguhamagara?";
+    const form = document.createElement("form");
+    form.className = "contact-form";
+    const label = document.createElement("label");
+    label.htmlFor = "customer-phone";
+    label.textContent = "Nomero yawe cyangwa iyindi umuntu ashobora kubona";
+    const input = document.createElement("input");
+    input.id = "customer-phone";
+    input.type = "tel";
+    input.inputMode = "tel";
+    input.autocomplete = "tel";
+    input.maxLength = 30;
+    input.placeholder = "Urugero: 0780000000";
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "button button-primary button-large";
+    submit.textContent = "Ohereza tike / Submit";
+    const noNumber = document.createElement("button");
+    noNumber.type = "button";
+    noNumber.className = "button button-outline button-large";
+    noNumber.textContent = "Oya, nta nomero nshaka / Submit without a number";
+    form.append(label, input, submit, noNumber);
+    wrapper.append(icon, title, translation, question, form);
+    diagnosticContent.replaceChildren(wrapper);
+
+    noNumber.addEventListener("click", () => {
+      void submitTicket(node, null);
+    });
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      submit.disabled = true;
+      noNumber.disabled = true;
+      void submitTicket(node, input.value.trim() || null);
+    });
+  }
+
+  async function submitTicket(node, customerPhone) {
     const ticket = {
       client_ticket_id: createId(),
       hardware_id: selectedUnit.hardware_id,
@@ -219,6 +268,7 @@
         description: node.translation || node.title,
       },
       diagnostic_path: traversal,
+      customer_phone: customerPhone,
       created_at: new Date().toISOString(),
       state: "queued",
     };
@@ -254,7 +304,18 @@
     restart.className = "button button-outline button-large";
     restart.textContent = "Tangira irindi genzura";
     restart.addEventListener("click", startTree);
-    wrapper.append(icon, title, translation, code, status, guidance, restart);
+    const exit = document.createElement("button");
+    exit.type = "button";
+    exit.className = "text-button";
+    exit.textContent = "Funga / Exit";
+    exit.addEventListener("click", () => {
+      diagnosticPanel.hidden = true;
+      hardwarePanel.hidden = false;
+      form.reset();
+      message.hidden = true;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    wrapper.append(icon, title, translation, code, status, guidance, restart, exit);
     diagnosticContent.replaceChildren(wrapper);
     if (navigator.onLine) await syncQueuedTickets();
     else registerBackgroundSync();
@@ -333,6 +394,15 @@
   document.getElementById("restart-button").addEventListener("click", () => {
     diagnosticPanel.hidden = true;
     hardwarePanel.hidden = false;
+    form.reset();
+  });
+
+  document.getElementById("exit-button").addEventListener("click", () => {
+    diagnosticPanel.hidden = true;
+    hardwarePanel.hidden = false;
+    form.reset();
+    message.hidden = true;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   async function syncQueuedTickets() {

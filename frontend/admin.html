@@ -31,15 +31,18 @@
     </section>
     <section id="admin-panel" hidden>
       <div class="admin-toolbar"><p id="admin-identity" class="tag"></p><button id="signout-button" class="button button-outline" type="button">Sign out</button></div>
-      <section class="panel registry-panel">
-        <div class="section-heading"><span class="section-icon">🏠</span><div><h2>Registered installations</h2><p id="hardware-count">Loading installations…</p></div></div>
-        <div class="table-wrap">
+      <details class="panel registry-panel" id="registry-panel">
+        <summary class="registry-summary">
+          <span class="section-heading"><span class="section-icon">🏠</span><span><strong>Registered installations</strong><small id="hardware-count">Loading installations…</small></span></span>
+          <span class="details-action">Show / Hide</span>
+        </summary>
+        <div class="table-wrap registry-table">
           <table class="users-table">
             <thead><tr><th>Contract</th><th>Owner</th><th>Village</th><th>District / sector</th><th>Status</th><th>Sales person</th></tr></thead>
             <tbody id="hardware-rows"></tbody>
           </table>
         </div>
-      </section>
+      </details>
       <div class="admin-grid">
         <section class="panel">
           <div class="section-heading"><span class="section-icon">🧰</span><div><h2>Register hardware</h2><p>Add a uniquely identified biogas or solar unit to the registry.</p></div></div>

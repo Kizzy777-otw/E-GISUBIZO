@@ -34,6 +34,7 @@ def _immutable_data_matches(ticket: ServiceTicket, item) -> bool:
         and ticket.fault_category == item.fault_category
         and ticket.fault_code == item.fault_code.model_dump()
         and ticket.diagnostic_path == [step.model_dump() for step in item.diagnostic_path]
+        and ticket.customer_phone == item.customer_phone
     )
 
 
@@ -113,6 +114,7 @@ def sync_tickets(payload: TicketSyncRequest, db: DatabaseSession) -> TicketSyncR
             fault_category=item.fault_category,
             fault_code=item.fault_code.model_dump(),
             diagnostic_path=[step.model_dump() for step in item.diagnostic_path],
+            customer_phone=item.customer_phone,
             requires_technician=True,
             district=unit.district,
             sector=unit.sector,
@@ -155,6 +157,7 @@ def sync_tickets(payload: TicketSyncRequest, db: DatabaseSession) -> TicketSyncR
                     "model_type": unit.model_type,
                     "fault_code": item.fault_code.model_dump(),
                     "diagnostic_path": [step.model_dump() for step in item.diagnostic_path],
+                    "customer_phone": item.customer_phone,
                     "status": "Open",
                 },
             )

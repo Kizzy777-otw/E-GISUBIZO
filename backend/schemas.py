@@ -179,6 +179,7 @@ class TicketSyncItem(BaseModel):
     fault_category: str = Field(min_length=2, max_length=120)
     fault_code: FaultCodePayload
     diagnostic_path: list[DiagnosticStep] = Field(min_length=1, max_length=12)
+    customer_phone: str | None = Field(default=None, max_length=30)
 
     @field_validator("hardware_id")
     @classmethod
@@ -219,6 +220,7 @@ class TicketResponse(BaseModel):
     fault_category: str
     fault_code: dict[str, Any]
     diagnostic_path: list[dict[str, Any]]
+    customer_phone: str | None = None
     requires_technician: bool
     district: str
     sector: str

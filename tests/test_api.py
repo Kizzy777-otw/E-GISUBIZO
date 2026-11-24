@@ -359,6 +359,7 @@ def test_dispatch_api_requires_staff_and_preserves_ticket_diagnostic_path(
                         "description": "Possible shading or dirt.",
                     },
                     "diagnostic_path": diagnostic_path,
+                    "customer_phone": "0780000000",
                 }
             ]
         },
@@ -369,6 +370,7 @@ def test_dispatch_api_requires_staff_and_preserves_ticket_diagnostic_path(
     ticket_list = api_client.get("/api/v1/tickets", headers=TECHNICIAN_HEADERS)
     ticket = next(item for item in ticket_list.json() if item["id"] == ticket_id)
     assert ticket["diagnostic_path"] == diagnostic_path
+    assert ticket["customer_phone"] == "0780000000"
     assert ticket["requires_technician"] is True
     assert not {"phone", "phone_number", "contact_number"} & ticket.keys()
     assert (

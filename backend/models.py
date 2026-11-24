@@ -87,6 +87,7 @@ class ServiceTicket(Base):
     fault_category: Mapped[str] = mapped_column(String(120), index=True)
     fault_code: Mapped[dict] = mapped_column(JSON, nullable=False)
     diagnostic_path: Mapped[list[dict]] = mapped_column(JSON, nullable=False)
+    customer_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     requires_technician: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     district: Mapped[str] = mapped_column(String(100), index=True)
     sector: Mapped[str] = mapped_column(String(100), index=True)

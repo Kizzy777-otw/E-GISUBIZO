@@ -68,6 +68,7 @@
         status,
         priority,
         hardware,
+        element("td", ticket.customer_phone || "Not provided"),
         element("td", ticket.fault_category),
         element("td", `${ticket.sector} / ${ticket.district}`),
         element("td", new Date(ticket.created_at).toLocaleString()),
