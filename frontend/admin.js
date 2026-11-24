@@ -117,6 +117,7 @@
   let currentUserId;
 
   async function loadHardware() {
+    document.getElementById("registry-panel").open = false;
     const units = await request("/hardware");
     const rows = document.getElementById("hardware-rows");
     rows.replaceChildren();

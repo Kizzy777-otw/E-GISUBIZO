@@ -112,7 +112,7 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .filters label { min-width: 170px; color: var(--muted); font-size: .76rem; font-weight: 700; }
 .filters select { display: block; margin-top: 5px; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
-.registry-panel { margin-bottom: 16px; }
+.registry-panel { margin-bottom: 12px; padding: 14px 16px; }
 .registry-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; list-style: none; }
 .registry-summary::-webkit-details-marker { display: none; }
 .registry-summary .section-heading { margin: 0; }
@@ -121,7 +121,8 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .details-action { flex: none; color: var(--green); font-size: .78rem; font-weight: 800; }
 .registry-panel[open] .details-action::after { content: " ▲"; }
 .registry-panel:not([open]) .details-action::after { content: " ▼"; }
-.registry-table { margin-top: 16px; max-height: 420px; overflow: auto; }
+.registry-table { margin-top: 12px; max-height: 160px; overflow: auto; }
+.registry-table th { position: sticky; top: 0; z-index: 1; }
 .diagnostic-actions { display: flex; align-items: center; gap: 10px; }
 .contact-form { display: grid; gap: 10px; width: min(100%, 520px); margin-top: 18px; }
 .contact-form input { width: 100%; }
