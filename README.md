@@ -16,6 +16,7 @@ An offline-first maintenance platform for rural biogas digesters and PAYGo solar
 - Kinyarwanda-first, icon-led diagnostic questions for biogas low flame and solar red battery/inverter indicators, with one question per screen and no more than three decision answers before a resolution or ticket.
 - Registered hardware ID and model validation. A unit validated while online is remembered on that device for future offline diagnoses.
 - Database-backed editable JSON trees, fault-code payloads, idempotent queued-ticket sync, technician status filtering, zone scoping, and append-only audit events.
+- Administrators can review the append-only audit history in a collapsible view on the administration page.
 - Diagnostic tree updates are checked for a valid reachable graph and a maximum of three questions per path. Browser sync sends queued tickets in batches of at most 100.
 - Mock SMS dispatch logging when a new ticket syncs; no live SMS gateway is contacted.
 - Local PWA app-shell files and decision trees are small and have no third-party runtime assets. The backend test suite checks the uncompressed cached shell plus seeded trees against the 1 MB limit.
