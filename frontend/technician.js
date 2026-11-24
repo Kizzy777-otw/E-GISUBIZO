@@ -10,7 +10,116 @@
   const ticketRows = document.getElementById("ticket-rows");
   const emptyState = document.getElementById("empty-state");
   const tokenKey = "egisubizo-technician-token";
+  const notificationButton = document.getElementById("notification-button");
+  const notificationStatus = document.getElementById("notification-status");
   let token = sessionStorage.getItem(tokenKey);
+  let audioContext;
+  let pollingTimer;
+  let knownTicketIds = new Set();
+  let monitoringInitialized = false;
+  let notificationsEnabled = false;
+
+  function playAlertSound() {
+    if (!notificationsEnabled) return;
+    try {
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(660, audioContext.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.28);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.warn("Could not play the ticket alert sound.", error);
+    }
+  }
+
+  function showBrowserNotification(ticket) {
+    if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    const hardware = ticket.hardware_id || "Unknown hardware";
+    new Notification("New E-Gisubizo service ticket", {
+      body: `${hardware} · ${ticket.priority} · ${ticket.fault_category}`,
+      tag: `egisubizo-ticket-${ticket.id}`,
+      icon: "/icon.svg",
+    });
+  }
+
+  async function enableNotifications() {
+    notificationsEnabled = true;
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+      if (audioContext && audioContext.state === "suspended") await audioContext.resume();
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        await audioContext.resume();
+      }
+      playAlertSound();
+    } catch (error) {
+      console.warn("Notification setup failed.", error);
+    }
+    updateNotificationStatus();
+  }
+
+  function updateNotificationStatus() {
+    if (!notificationsEnabled) {
+      notificationStatus.textContent = "Sound and browser alerts are off.";
+      notificationButton.textContent = "Enable sound & alerts";
+      return;
+    }
+    const browserPermission = ("Notification" in window)
+      ? Notification.permission
+      : "unsupported";
+    notificationStatus.textContent = browserPermission === "granted"
+      ? "Sound and browser alerts are enabled."
+      : "Sound is enabled; browser notification permission was not granted.";
+    notificationButton.textContent = "Alerts enabled";
+  }
+
+  async function checkForNewTickets() {
+    if (!token) return;
+    try {
+      const tickets = await api("/tickets");
+      const currentIds = new Set(tickets.map((ticket) => ticket.id));
+      if (!monitoringInitialized) {
+        knownTicketIds = currentIds;
+        monitoringInitialized = true;
+        return;
+      }
+      const newTickets = tickets.filter((ticket) =>
+        !knownTicketIds.has(ticket.id) && ["Open", "InProgress"].includes(ticket.status)
+      );
+      knownTicketIds = currentIds;
+      if (newTickets.length) {
+        playAlertSound();
+        showBrowserNotification(newTickets[0]);
+        showNotice(
+          `${newTickets.length} new service ${newTickets.length === 1 ? "ticket" : "tickets"} received.`,
+          "success",
+        );
+        await loadTickets();
+      }
+    } catch (error) {
+      console.warn("Could not check for new tickets.", error);
+    }
+  }
+
+  function startTicketPolling() {
+    window.clearInterval(pollingTimer);
+    pollingTimer = window.setInterval(checkForNewTickets, 15000);
+  }
+
+  function stopTicketPolling() {
+    window.clearInterval(pollingTimer);
+    pollingTimer = undefined;
+  }
 
   function showNotice(text, kind = "info") {
     dispatchMessage.textContent = text;
@@ -37,6 +146,9 @@
     if (response.status === 401) {
       token = null;
       sessionStorage.removeItem(tokenKey);
+      stopTicketPolling();
+      monitoringInitialized = false;
+      knownTicketIds = new Set();
       setSignedIn(false);
     }
     if (!response.ok) {
@@ -144,6 +256,9 @@
       sessionStorage.setItem(tokenKey, token);
       setSignedIn(true);
       renderRows(tickets);
+      knownTicketIds = new Set(tickets.map((ticket) => ticket.id));
+      monitoringInitialized = true;
+      startTicketPolling();
     } catch (error) {
       token = null;
       document.getElementById("password-login").value = "";
@@ -165,14 +280,28 @@
     }
     token = null;
     sessionStorage.removeItem(tokenKey);
+    stopTicketPolling();
+    monitoringInitialized = false;
+    knownTicketIds = new Set();
     setSignedIn(false);
   });
   document.getElementById("refresh-button").addEventListener("click", loadTickets);
   document.getElementById("status-filter").addEventListener("change", loadTickets);
   document.getElementById("priority-filter").addEventListener("change", loadTickets);
+  notificationButton.addEventListener("click", enableNotifications);
 
   if (token) {
     setSignedIn(true);
-    void loadTickets();
+    void (async () => {
+      await loadTickets();
+      try {
+        const tickets = await api("/tickets");
+        knownTicketIds = new Set(tickets.map((ticket) => ticket.id));
+        monitoringInitialized = true;
+        startTicketPolling();
+      } catch (error) {
+        console.warn("Could not initialize ticket polling.", error);
+      }
+    })();
   }
 })();

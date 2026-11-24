@@ -106,6 +106,8 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .auth-form { display: grid; gap: 10px; }
 .form-error { margin-top: 12px; padding: 12px; border-radius: 9px; font-size: .86rem; }
 .dispatch-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dispatch-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.notification-status { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
 .dispatch-toolbar h2 { margin: 0 0 5px; font-size: 1.25rem; }
 .dispatch-toolbar p { font-size: .83rem; }
 .filters { display: flex; align-items: flex-end; gap: 12px; margin: 22px 0; }

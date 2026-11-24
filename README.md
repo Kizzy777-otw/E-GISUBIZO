@@ -123,6 +123,10 @@ Sign in to the technician or administrator page with the passwords set in step 3
 
 Biogas contract numbers must use the `HBGC-` prefix followed by five digits; for example, `HBGC-00001` is valid and `BIO-RW-0001` is not valid.
 
+### Technician ticket notifications
+
+After signing in to `/technician.html`, select **Enable sound & alerts** once. The browser will ask for notification permission. Keep the dispatch tab open: every 15 seconds, it checks for new tickets and, only after the technician enables alerts, plays a short beep and creates a browser notification. This free in-browser notification method does not send push alerts when the browser or device is closed.
+
 From a second terminal, verify the running backend:
 
 ```shell

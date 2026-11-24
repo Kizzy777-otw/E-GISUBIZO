@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#123c35">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=20261124-notifications">
   <title>Dispatch queue · E-Gisubizo</title>
 </head>
 <body class="dispatch-page">
@@ -33,8 +33,12 @@
     <section id="dispatch-panel" class="panel" hidden>
       <div class="dispatch-toolbar">
         <div><h2>Active service tickets</h2><p>Filter and update the status as work progresses.</p></div>
-        <button id="signout-button" class="button button-outline" type="button">Sign out</button>
+        <div class="dispatch-actions">
+          <button id="notification-button" class="button button-outline" type="button">Enable sound & alerts</button>
+          <button id="signout-button" class="button button-outline" type="button">Sign out</button>
+        </div>
       </div>
+      <p id="notification-status" class="notification-status">Sound and browser alerts are off.</p>
       <div class="filters">
         <label>Status<select id="status-filter"><option value="">All statuses</option><option>Open</option><option>InProgress</option><option>Resolved</option><option>Closed</option></select></label>
         <label>Priority<select id="priority-filter"><option value="">All priorities</option><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option></select></label>
@@ -50,6 +54,6 @@
       </div>
     </section>
   </main>
-  <script src="/technician.js" defer></script>
+  <script src="/technician.js?v=20261124-notifications" defer></script>
 </body>
 </html>
