@@ -116,6 +116,31 @@
 
   let currentUserId;
 
+  async function loadAudit() {
+    const logs = await request("/audit");
+    const rows = document.getElementById("audit-rows");
+    rows.replaceChildren();
+    for (const log of logs) {
+      const row = document.createElement("tr");
+      const values = [
+        new Date(log.created_at).toLocaleString(),
+        log.event_type,
+        log.ticket_id ? String(log.ticket_id) : "—",
+      ];
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      }
+      const details = document.createElement("td");
+      details.textContent = JSON.stringify(log.details);
+      row.append(details);
+      rows.append(row);
+    }
+    document.getElementById("audit-count").textContent =
+      `${logs.length} immutable ${logs.length === 1 ? "event" : "events"}`;
+  }
+
   async function loadHardware() {
     document.getElementById("registry-panel").open = false;
     const units = await request("/hardware");
@@ -146,7 +171,7 @@
     currentUserId = user.id;
     document.getElementById("admin-identity").textContent = `Signed in: ${user.username}`;
     // Load both admin datasets before revealing any edit controls.
-    await Promise.all([loadTrees(), loadUsers(), loadHardware()]);
+    await Promise.all([loadTrees(), loadUsers(), loadHardware(), loadAudit()]);
     setSignedIn(true);
   }
 

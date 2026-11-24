@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from .database import Base, SessionLocal, engine, should_create_schema, validate_database_configuration
-from .routers import auth, hardware, notifications, tickets, trees, users
+from .routers import audit, auth, hardware, notifications, tickets, trees, users
 from .seed import seed_initial_data
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -61,6 +61,7 @@ if allowed_origins:
     )
 
 app.include_router(auth.router)
+app.include_router(audit.router)
 app.include_router(hardware.router)
 app.include_router(trees.router)
 app.include_router(tickets.router)

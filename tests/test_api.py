@@ -90,6 +90,15 @@ def test_admin_hardware_registry_includes_metadata(api_client: TestClient) -> No
     assert any(unit["hardware_id"] == "HBGC-00001" for unit in units)
 
 
+def test_admin_audit_history_is_read_only_and_role_protected(api_client: TestClient) -> None:
+    denied = api_client.get("/api/v1/audit", headers=TECHNICIAN_HEADERS)
+    allowed = api_client.get("/api/v1/audit", headers=ADMIN_HEADERS)
+
+    assert denied.status_code == 403
+    assert allowed.status_code == 200
+    assert isinstance(allowed.json(), list)
+
+
 def test_password_login_for_seeded_admin_and_wrong_password(api_client: TestClient) -> None:
     valid = api_client.post(
         "/api/v1/auth/login",

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#123c35">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css?v=20261124-registry">
+  <link rel="stylesheet" href="/styles.css?v=20261124-audit">
   <title>Administration · E-Gisubizo</title>
 </head>
 <body class="dispatch-page">
@@ -40,6 +40,18 @@
           <table class="users-table">
             <thead><tr><th>Contract</th><th>Owner</th><th>Village</th><th>District / sector</th><th>Status</th><th>Sales person</th></tr></thead>
             <tbody id="hardware-rows"></tbody>
+          </table>
+        </div>
+      </details>
+      <details class="panel audit-panel">
+        <summary class="registry-summary">
+          <span class="section-heading"><span class="section-icon">🧾</span><span><strong>Immutable audit history</strong><small id="audit-count">Loading audit history…</small></span></span>
+          <span class="details-action">View history</span>
+        </summary>
+        <div class="table-wrap registry-table">
+          <table class="users-table">
+            <thead><tr><th>Time</th><th>Event</th><th>Ticket</th><th>Details</th></tr></thead>
+            <tbody id="audit-rows"></tbody>
           </table>
         </div>
       </details>
@@ -94,6 +106,6 @@
       </section>
     </section>
   </main>
-  <script src="/admin.js?v=20261124-registry" defer></script>
+  <script src="/admin.js?v=20261124-audit" defer></script>
 </body>
 </html>

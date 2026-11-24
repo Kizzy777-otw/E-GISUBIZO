@@ -115,6 +115,7 @@ input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px 
 .filters select { display: block; margin-top: 5px; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
 .registry-panel { margin-bottom: 12px; padding: 14px 16px; }
+.audit-panel { margin: 12px 0 16px; padding: 14px 16px; }
 .registry-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; list-style: none; }
 .registry-summary::-webkit-details-marker { display: none; }
 .registry-summary .section-heading { margin: 0; }

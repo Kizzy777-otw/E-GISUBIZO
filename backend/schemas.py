@@ -230,6 +230,17 @@ class TicketResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AuditLogResponse(BaseModel):
+    id: int
+    ticket_id: int | None
+    actor_user_id: int | None
+    event_type: str
+    details: dict[str, Any]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class NotificationRequest(BaseModel):
     ticket_id: int
 
